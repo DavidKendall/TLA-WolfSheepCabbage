@@ -1,39 +1,47 @@
 -------------------------- MODULE WolfSheepCabbage --------------------------
-PARTICIPANTS == {"farmer", "wolf", "sheep", "cabbage"}
+EXTENDS TLC
+
+PARTICIPANT == {"farmer", "wolf", "sheep", "cabbage"}
 BANK == {"left", "right"}
 
 VARIABLE
-  location
+  participants
 
 TypeOk == 
-  /\ location \in [PARTICIPANTS -> BANK]
+  /\ participants \in [BANK -> SUBSET PARTICIPANT]
 ----
 
 Opposite(b) == IF b = "left" THEN "right" ELSE "left"
 
-EverythingSafe(loc) ==
- /\ (loc.wolf = loc.sheep) => (loc.farmer = loc.sheep)
- /\ (loc.sheep = loc.cabbage) => (loc.farmer = loc.cabbage) 
+EverythingSafe(p) ==
+ /\ (\E b \in BANK : {"wolf", "sheep"} \subseteq p[b]) => (\E b \in BANK : {"wolf", "sheep", "farmer"} \subseteq p[b])
+ /\ (\E b \in BANK : {"sheep", "cabbage"} \subseteq p[b]) => (\E b \in BANK : {"sheep", "cabbage", "farmer"} \subseteq p[b])
  
 Init ==
-  /\ location = [p \in PARTICIPANTS |-> "left"]
+  /\ participants = [left |-> {"farmer", "wolf", "sheep", "cabbage"}, right |-> {}]
 
 CrossAlone == 
-  /\ location' = [location EXCEPT !.farmer = Opposite(location.farmer)]
-  /\ EverythingSafe(location')
+  /\ LET 
+       fb == CHOOSE bank \in BANK : "farmer" \in participants[bank]
+       ob == Opposite(fb)
+     IN    
+       /\ participants' = (fb :> participants[fb] \ {"farmer"} @@ ob :> participants[ob] \union {"farmer"}) 
+       /\ EverythingSafe(participants')
   
 CrossWith(p) ==
-  LET b == location.farmer IN
-    /\ location[p] = b
-    /\ location' = [location EXCEPT ![p] = Opposite(b), !.farmer = Opposite(b)]
-    /\ EverythingSafe(location')
+  /\ LET 
+       fb == CHOOSE bank \in BANK : "farmer" \in participants[bank]
+       ob == Opposite(fb)
+     IN    
+       /\ participants' = (fb :> participants[fb] \ {"farmer", p} @@ ob :> participants[ob] \union {"farmer", p})
+       /\ EverythingSafe(participants')
   
 Next == 
   \/ CrossAlone
-  \/ \E p \in PARTICIPANTS \ {"farmer"} :
+  \/ \E p \in PARTICIPANT \ {"farmer"} :
        \/ CrossWith(p)
           
-Goal == \A p \in PARTICIPANTS : location[p] = "right"
+Goal == participants.right = PARTICIPANT
 
 (*
  * A solution to the problem can be found with the model above by
@@ -46,5 +54,5 @@ Goal == \A p \in PARTICIPANTS : location[p] = "right"
 
 =============================================================================
 \* Modification History
-\* Last modified Sat Oct 20 22:07:14 BST 2018 by cgdk2
+\* Last modified Sat Oct 20 22:55:26 BST 2018 by cgdk2
 \* Created Wed Oct 03 10:21:23 BST 2018 by cgdk2
