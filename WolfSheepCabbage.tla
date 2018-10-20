@@ -12,20 +12,20 @@ TypeOk ==
 Opposite(b) == IF b = "left" THEN "right" ELSE "left"
 
 EverythingSafe(loc) ==
- /\ (loc["wolf"] = loc["sheep"]) => (loc["farmer"] = loc["sheep"])
- /\ (loc["sheep"] = loc["cabbage"]) => (loc["farmer"] = loc["cabbage"]) 
+ /\ (loc.wolf = loc.sheep) => (loc.farmer = loc.sheep)
+ /\ (loc.sheep = loc.cabbage) => (loc.farmer = loc.cabbage) 
  
 Init ==
   /\ location = [p \in PARTICIPANTS |-> "left"]
 
 CrossAlone == 
-  /\ location' = [location EXCEPT !["farmer"] = Opposite(location["farmer"])]
+  /\ location' = [location EXCEPT !.farmer = Opposite(location.farmer)]
   /\ EverythingSafe(location')
   
 CrossWith(p) ==
-  LET b == location["farmer"] IN
+  LET b == location.farmer IN
     /\ location[p] = b
-    /\ location' = [location EXCEPT ![p] = Opposite(b), !["farmer"] = Opposite(b)]
+    /\ location' = [location EXCEPT ![p] = Opposite(b), !.farmer = Opposite(b)]
     /\ EverythingSafe(location')
   
 Next == 
@@ -46,5 +46,5 @@ Goal == \A p \in PARTICIPANTS : location[p] = "right"
 
 =============================================================================
 \* Modification History
-\* Last modified Sun Oct 07 11:44:31 BST 2018 by cgdk2
+\* Last modified Sat Oct 20 22:07:14 BST 2018 by cgdk2
 \* Created Wed Oct 03 10:21:23 BST 2018 by cgdk2
